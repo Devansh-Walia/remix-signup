@@ -1,8 +1,8 @@
-import type { ActionFunction } from "@remix-run/node";
+import type { ActionFunction, ErrorBoundaryComponent } from "@remix-run/node";
 import { Form } from "@remix-run/react";
 
-import { client } from "../lib/gql";
 import { gql } from "graphql-request";
+import { client } from "../lib/gql";
 
 const signUp = gql`
   mutation UserSignUp($createUserInput: CreateUserInput!) {
@@ -37,9 +37,18 @@ export const action: ActionFunction = async ({ request }) => {
       password: password,
     },
   };
-  const res = await client.request(signUp, vars);
+  try {
+    const res = await client.request(signUp, vars);
+    return { status: "ok", res };
+  } catch (e) {
+    throw e;
+  }
+};
 
-  return { status: "ok", res };
+// component specific error boundaries
+export const ErrorBoundary: ErrorBoundaryComponent = ({ error }) => {
+  const err = error.message.substring(0, error.message.indexOf("!"));
+  return <p>Oh Snap! {err}</p>;
 };
 
 export default function Index() {
